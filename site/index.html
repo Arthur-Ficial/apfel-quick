@@ -102,15 +102,26 @@
     .nav-right { display: flex; align-items: center; gap: 6px; }
 
     .btn-brand, .btn-dark, .btn-outline {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
       border-radius: 8px;
       text-decoration: none;
       font-weight: 600;
       font-size: 13px;
-      white-space: nowrap;
+      line-height: 1.25;
       border: 1px solid transparent;
       transition: background .15s, border-color .15s;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      text-align: center;
+    }
+    .btn-brand > svg, .btn-dark > svg, .btn-outline > svg { flex-shrink: 0; }
+    .btn-brand > span, .btn-dark > span, .btn-outline > span {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
     .btn-brand { background: var(--brand); color: #fff; }
     .btn-brand:hover { background: var(--brand-dark); }
@@ -119,9 +130,22 @@
     .btn-outline { background: transparent; color: #fff; border-color: #333; }
     .btn-outline:hover { border-color: var(--brand); color: var(--brand); }
     .btn-big {
-      padding: 14px 22px;
+      padding: 14px 20px;
       font-size: 15px;
       border-radius: 10px;
+    }
+    /* Mobile: hero CTAs stack full-width so dynamic labels never clip */
+    .hero-ctas .btn-brand,
+    .hero-ctas .btn-dark { flex: 1 1 100%; }
+    @media (min-width: 520px) {
+      .hero-ctas .btn-brand,
+      .hero-ctas .btn-dark { flex: 0 0 auto; }
+    }
+    /* Nav Download: abbreviate on very narrow viewports via CSS — the span
+       carries the full label, a ::before provides the compact fallback. */
+    .nav-right .btn-brand {
+      padding: 8px 12px;
+      font-size: 12px;
     }
 
     /* ── LAYOUT ── */
