@@ -56,15 +56,19 @@ struct OverlayView: View {
                         .padding(20)
                 }
                 .frame(maxHeight: 380)
-            }
-
-            // Copied-to-clipboard flash
-            if viewModel.justCopied {
-                CopiedFlashView()
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.9)),
-                        removal: .opacity
-                    ))
+                // Floating "copied" badge — overlaid top-right, doesn't push layout
+                .overlay(alignment: .topTrailing) {
+                    if viewModel.justCopied {
+                        CopiedBadge()
+                            .padding(.top, 10)
+                            .padding(.trailing, 14)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.6).combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                    }
+                }
+                .animation(.spring(response: 0.35, dampingFraction: 0.6), value: viewModel.justCopied)
             }
 
             // Error message
@@ -102,32 +106,28 @@ extension Notification.Name {
     static let openSettings = Notification.Name("ApfelQuick.openSettings")
 }
 
-// MARK: - Animated "Copied!" flash
+// MARK: - Floating "Copied" badge (never pushes the response out of view)
 
-private struct CopiedFlashView: View {
-    @State private var scale: CGFloat = 0.6
-    @State private var opacity: Double = 0.0
-
+private struct CopiedBadge: View {
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(red: 0.18, green: 0.74, blue: 0.38))
-                .scaleEffect(scale)
-                .opacity(opacity)
-            Text("Copied to clipboard")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color(red: 0.18, green: 0.74, blue: 0.38))
-            Spacer()
+                .font(.system(size: 13, weight: .bold))
+            Text("Copied")
+                .font(.system(size: 12, weight: .semibold))
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(Color(red: 0.18, green: 0.74, blue: 0.38).opacity(0.08))
-        .onAppear {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) {
-                scale = 1.0
-                opacity = 1.0
-            }
-        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(LinearGradient(
+                    colors: [Color(red: 0.22, green: 0.78, blue: 0.44),
+                             Color(red: 0.14, green: 0.62, blue: 0.32)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+        )
     }
 }
