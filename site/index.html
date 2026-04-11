@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary SEO -->
+  <title>apfel-quick: Instant AI overlay for macOS</title>
+  <meta name="description" content="Press a key, ask anything. Streaming on-device AI with auto-copy to clipboard. Math expressions computed locally. 100% private, offline-first. Free and open source.">
+  <link rel="canonical" href="https://apfel-quick.franzai.com/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="apfel-quick">
+  <meta property="og:url" content="https://apfel-quick.franzai.com/">
+  <meta property="og:title" content="apfel-quick: Instant AI overlay for macOS">
+  <meta property="og:description" content="Press Ctrl+Space, type a prompt, get a streaming reply auto-copied to your clipboard. Math computed locally. 100% on-device, offline-first.">
+  <meta property="og:image" content="https://apfel-quick.franzai.com/img/social.png">
+  <meta property="og:image:secure_url" content="https://apfel-quick.franzai.com/img/social.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="apfel-quick: instant AI overlay for macOS with streaming replies and clipboard auto-copy">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="apfel-quick: Instant AI overlay for macOS">
+  <meta name="twitter:description" content="Press a key, ask anything. Streaming on-device AI with auto-copy to clipboard. Math computed locally. 100% private.">
+  <meta name="twitter:image" content="https://apfel-quick.franzai.com/img/social.png">
+  <meta name="twitter:image:alt" content="apfel-quick: instant AI overlay for macOS">
+
+  <!-- App hints -->
+  <meta name="application-name" content="apfel-quick">
+  <meta name="apple-mobile-web-app-title" content="apfel-quick">
+  <meta name="theme-color" content="#8b5cf6">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "apfel-quick",
+    "operatingSystem": "macOS 26+",
+    "applicationCategory": "ProductivityApplication",
+    "description": "Instant AI overlay for macOS. Press a key, type a prompt, get a streaming on-device reply auto-copied to your clipboard. Math expressions computed locally.",
+    "url": "https://apfel-quick.franzai.com/",
+    "downloadUrl": "https://github.com/Arthur-Ficial/apfel-quick/releases/download/v1.0.0/apfel-quick-v1.0.0-macos-arm64.zip",
+    "softwareVersion": "1.0.0",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Franz Enzenhofer",
+      "url": "https://fullstackoptimization.com"
+    }
+  }
+  </script>
+
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:    #8b5cf6;
+      --brand-d:  #7c3aed;
+      --brand-l:  #f5f3ff;
+      --brand-l2: #ede9fe;
+      --ink:      #1a1a1a;
+      --ink2:     #4a4a4a;
+      --muted:    #6b7280;
+      --bg:       #ffffff;
+      --bg2:      #faf9ff;
+      --bd:       #e5e7eb;
+      --bdl:      #e0d8f5;
+      --r:        12px;
+    }
+
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fff;
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; height: auto; }
+    a { color: var(--brand-d); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid var(--bdl);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .nav-brand img { width: 24px; height: 24px; border-radius: 5px; }
+    .nav-brand span { font-weight: 700; font-size: 16px; color: var(--brand-d); letter-spacing: -.2px; }
+    .nav-right { display: flex; align-items: center; gap: 8px; }
+    .nav-gh { display: none !important; }
+
+    .btn-dark {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn-purple {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--brand);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      color: var(--ink);
+      padding: 9px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid var(--bdl);
+    }
+
+    /* ── BIG BUTTONS ── */
+    .btn-xl {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 18px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+      line-height: 1;
+      white-space: nowrap;
+      width: 100%;
+      max-width: 100%;
+      border: 2px solid transparent;
+    }
+    .btn-xl.primary { background: var(--brand); color: #fff; }
+    .btn-xl.primary:hover { background: var(--brand-d); }
+    .btn-xl.secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--bdl);
+    }
+    .btn-xl.secondary:hover { border-color: var(--brand); color: var(--brand-d); }
+    .btn-xl code {
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-size: 14px;
+      background: transparent;
+      padding: 0;
+    }
+
+    /* ── LAYOUT ── */
+    .wrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+    .hero-text { text-align: center; }
+    .hero-meta { justify-content: center; }
+
+    /* ── HERO ── */
+    .hero { padding: 56px 0 56px; background: #fff; }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--brand-d);
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      font-size: clamp(34px, 9vw, 64px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.02;
+      color: var(--ink);
+      margin-bottom: 18px;
+    }
+    .hero h1 em { font-style: normal; color: var(--brand-d); }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--ink2);
+      line-height: 1.55;
+      margin-bottom: 32px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-ctas {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .hero-meta span { padding: 3px 10px 3px 0; }
+    .hero-meta span::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: var(--brand);
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── HERO PILL ── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--brand-l);
+      border: 1.5px solid var(--bdl);
+      color: var(--brand-d);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 999px;
+      margin-bottom: 22px;
+    }
+
+    /* ── BANNER ── */
+    .banner {
+      background: var(--brand);
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .banner p {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #fff;
+      line-height: 1.5;
+    }
+
+    /* ── SECTIONS ── */
+    .sec-white { background: #fff; padding: 64px 0; }
+    .sec-soft  { background: var(--bg2); padding: 64px 0; }
+    .sec-tint  { background: var(--brand-l); padding: 64px 0; }
+
+    .lbl {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--brand-d);
+      margin-bottom: 12px;
+    }
+    h2.sh {
+      font-size: clamp(24px, 5.5vw, 38px);
+      font-weight: 800;
+      letter-spacing: -.5px;
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+    p.sub {
+      font-size: 16px;
+      color: var(--ink2);
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      background: var(--bdl);
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 1px solid var(--bdl);
+    }
+    .step {
+      background: #fff;
+      padding: 26px 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-n {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--brand);
+      border-radius: 50%;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .step h3 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .step p  { font-size: 14px; color: var(--ink2); line-height: 1.55; }
+    .step kbd {
+      display: inline-block;
+      background: #f4f1fb;
+      border: 1px solid var(--bdl);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--brand-d);
+      font-weight: 600;
+    }
+
+    /* ── FEATURES ── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      background: var(--bdl);
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 1px solid var(--bdl);
+    }
+    .feat { background: #fff; padding: 22px 24px; }
+    .feat .ftag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--brand-d);
+      margin-bottom: 6px;
+    }
+    .feat h3 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .feat p  { font-size: 14px; color: var(--ink2); line-height: 1.55; }
+
+    /* ── REQUIREMENTS ── */
+    .req-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      background: var(--bdl);
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 1px solid var(--bdl);
+    }
+    .req-item {
+      background: #fff;
+      padding: 20px 22px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .req-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--brand);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 9px;
+    }
+    .req-item h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+    .req-item p  { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+    .req-note {
+      background: var(--brand-l);
+      border: 1px solid var(--bdl);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--brand-d);
+      line-height: 1.6;
+      margin-top: 16px;
+    }
+    .req-note strong { color: #4c1d95; }
+
+    /* ── INSTALL CARDS ── */
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .i-card {
+      background: #fff;
+      border: 1px solid var(--bdl);
+      border-radius: var(--r);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .i-card.primary { border: 2px solid var(--brand); }
+    .i-card h3 { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .i-card p { font-size: 14px; color: var(--ink2); margin-bottom: 16px; line-height: 1.55; }
+    .i-card .btn-xl { margin-top: auto; }
+    .i-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .i-note a { color: var(--brand-d); text-decoration: none; font-weight: 600; }
+
+    pre {
+      background: #1a1a1a;
+      color: #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    code {
+      background: var(--brand-l);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: .88em;
+      color: var(--brand-d);
+    }
+
+    /* ── MATH CALLOUT ── */
+    .math-card {
+      background: #fff;
+      border: 2px solid var(--brand);
+      border-radius: var(--r);
+      padding: 28px 26px;
+    }
+    .math-card .math-tag {
+      display: inline-block;
+      background: var(--brand);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    .math-card h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+      letter-spacing: -.3px;
+    }
+    .math-card p { font-size: 14px; color: var(--ink2); line-height: 1.6; margin-bottom: 16px; }
+    .math-example {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-size: 15px;
+      color: #c4b5fd;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .math-example .arrow { color: var(--brand); margin: 0 8px; font-weight: 700; }
+    .math-example .result { color: #fff; font-weight: 700; }
+    .math-funcs {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .math-funcs strong { color: var(--ink); }
+
+    /* ── ENGINE ── */
+    .engine-card {
+      background: #fff;
+      border: 1px solid var(--bdl);
+      border-radius: var(--r);
+      padding: 26px;
+    }
+    .engine-card p { font-size: 15px; color: var(--ink2); line-height: 1.65; margin-bottom: 14px; }
+    .engine-card a { color: var(--brand-d); font-weight: 600; text-decoration: none; }
+    .engine-card .related {
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--bdl);
+      padding-top: 14px;
+      margin-top: 16px;
+      margin-bottom: 0;
+    }
+
+    /* ── OPEN SOURCE ── */
+    .sec-os {
+      background: var(--brand-l);
+      padding: 64px 20px;
+      text-align: center;
+    }
+    .sec-os h2 {
+      font-size: clamp(24px, 5.5vw, 36px);
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -.5px;
+      margin-bottom: 12px;
+    }
+    .sec-os p {
+      font-size: 16px;
+      color: var(--ink2);
+      margin-bottom: 28px;
+      line-height: 1.6;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .os-links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #fff;
+      border-top: 1px solid var(--bdl);
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .foot-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .foot-links a { font-size: 13px; font-weight: 500; color: var(--ink2); text-decoration: none; }
+    .foot-links a:hover { color: var(--brand-d); }
+    footer p { font-size: 12px; color: var(--muted); }
+    footer a { color: var(--brand-d); text-decoration: none; }
+
+    /* ── DESKTOP ── */
+    @media (min-width: 760px) {
+      nav { padding: 14px 48px; }
+      .nav-gh { display: inline-flex !important; }
+
+      .wrap { max-width: 1000px; padding: 0 48px; }
+
+      .hero { padding: 96px 0 88px; }
+      .hero-ctas {
+        flex-direction: row;
+        max-width: 560px;
+      }
+      .hero-ctas .btn-xl { flex: 1; }
+
+      .sec-white { padding: 88px 0; }
+      .sec-soft  { padding: 88px 0; }
+      .sec-tint  { padding: 88px 0; }
+
+      .steps { grid-template-columns: repeat(3, 1fr); }
+      .step  { flex-direction: column; }
+
+      .feat-grid { grid-template-columns: repeat(3, 1fr); }
+      .req-list  { grid-template-columns: repeat(3, 1fr); }
+
+      .install-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-brand" href="#">
+    <img src="img/icon.png" alt="" width="24" height="24">
+    <span>apfel-quick</span>
+  </a>
+  <div class="nav-right">
+    <a class="btn-dark nav-gh" href="https://github.com/Arthur-Ficial/apfel-quick" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</a>
+    <a class="btn-purple" href="#install"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Download</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-text">
+      <div class="hero-eyebrow">macOS AI overlay</div>
+      <h1><em>apfel-quick</em></h1>
+      <div class="pill">Press a key. Ask anything. Done.</div>
+      <p class="hero-sub">Instant AI overlay for macOS. Hit <strong>Ctrl+Space</strong>, type a prompt, press Enter. The streaming reply lands on screen and on your clipboard.</p>
+      <div class="hero-ctas">
+        <a class="btn-xl primary" href="https://github.com/Arthur-Ficial/apfel-quick/releases/download/v1.0.0/apfel-quick-v1.0.0-macos-arm64.zip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Download for Mac</a>
+        <a class="btn-xl secondary" href="#install"><code>brew install apfel-quick</code></a>
+      </div>
+      <div class="hero-meta">
+        <span>MIT Open Source</span>
+        <span>macOS 26 Tahoe</span>
+        <span>Apple Silicon</span>
+        <span>100% On-Device</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Banner -->
+<div class="banner">
+  <p>Everything runs on your device. No network calls. No data leaves your Mac.</p>
+</div>
+
+<!-- How it works -->
+<section class="sec-white" id="how-it-works">
+  <div class="wrap">
+    <div class="lbl">How it works</div>
+    <h2 class="sh">Three keys to an answer.</h2>
+    <p class="sub">No accounts. No keys. No setup. Just open the overlay and ask.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>
+          <h3>Press <kbd>Ctrl</kbd> <kbd>Space</kbd></h3>
+          <p>The overlay slides in from anywhere on your Mac. The hotkey is configurable.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>
+          <h3>Type your question</h3>
+          <p>Ask anything. Draft a sentence. Translate a phrase. Explain a concept. Then press Enter.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>
+          <h3>Get the answer</h3>
+          <p>The reply streams in real time and is auto-copied to your clipboard. Paste it anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="sec-soft" id="features">
+  <div class="wrap">
+    <div class="lbl">Features</div>
+    <h2 class="sh">Small app. Big habit.</h2>
+    <p class="sub">Built to disappear into your workflow. One hotkey, one prompt, instant answer.</p>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="ftag">Hotkey</div>
+        <h3>Instant overlay</h3>
+        <p>Global hotkey from any app. Default <code>Ctrl+Space</code>, fully configurable in settings.</p>
+      </div>
+      <div class="feat">
+        <div class="ftag">Streaming</div>
+        <h3>Real-time replies</h3>
+        <p>Tokens arrive as the model generates. No waiting for the full response.</p>
+      </div>
+      <div class="feat">
+        <div class="ftag">Clipboard</div>
+        <h3>Auto-copy to clipboard</h3>
+        <p>Every reply lands on your clipboard automatically. Paste it into the next app you touch.</p>
+      </div>
+      <div class="feat">
+        <div class="ftag">Math</div>
+        <h3>Local math calculator</h3>
+        <p>Math expressions bypass the AI entirely. Computed locally and instantly. Always correct.</p>
+      </div>
+      <div class="feat">
+        <div class="ftag">Menu Bar</div>
+        <h3>Lives in the menu bar</h3>
+        <p>Tiny icon, no Dock clutter. Launch at login optional. Quick access to settings and updates.</p>
+      </div>
+      <div class="feat">
+        <div class="ftag">Private</div>
+        <h3>100% on-device</h3>
+        <p>No API keys. No network calls. No data ever leaves your Mac. Open source under MIT.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Math shortcut -->
+<section class="sec-white" id="math">
+  <div class="wrap">
+    <div class="lbl">Math shortcut</div>
+    <h2 class="sh">Numbers? No AI needed.</h2>
+    <p class="sub">apfel-quick detects math expressions and computes them locally. Instant. Scientifically correct. Never hallucinated.</p>
+    <div class="math-card">
+      <div class="math-tag">Try it</div>
+      <h3>Type math, get the result</h3>
+      <p>European decimal commas, parentheses, exponents, and scientific functions are all supported. The AI is bypassed entirely.</p>
+      <div class="math-example">
+        54,34*6-(435353) <span class="arrow">&rarr;</span> <span class="result">-435026.96</span>
+      </div>
+      <p class="math-funcs">
+        <strong>Operators:</strong> + &nbsp; &minus; &nbsp; &times; &nbsp; &divide; &nbsp; ^ &nbsp; ( ) &nbsp; <br>
+        <strong>Functions:</strong> sqrt, sin, cos, tan, log, ln, abs, floor, ceil, round &nbsp; <br>
+        <strong>Constants:</strong> pi, e &nbsp; <strong>Decimals:</strong> both <code>1.5</code> and <code>1,5</code>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Requirements -->
+<section class="sec-soft" id="requirements">
+  <div class="wrap">
+    <div class="lbl">Before you install</div>
+    <h2 class="sh">Requirements</h2>
+    <p class="sub">apfel-quick uses the on-device foundation model on your Mac. You need all three.</p>
+    <div class="req-list">
+      <div class="req-item">
+        <div class="req-dot"></div>
+        <div>
+          <h3>macOS 26 (Tahoe)</h3>
+          <p>Required for the on-device foundation model. Update via System Settings &gt; Software Update.</p>
+        </div>
+      </div>
+      <div class="req-item">
+        <div class="req-dot"></div>
+        <div>
+          <h3>Apple Silicon (M1 or later)</h3>
+          <p>The on-device model runs on-chip only. About This Mac must show M1, M2, M3, or M4.</p>
+        </div>
+      </div>
+      <div class="req-item">
+        <div class="req-dot"></div>
+        <div>
+          <h3>On-device AI enabled</h3>
+          <p>Turn on the on-device foundation model in System Settings. Supports English, German, French, Spanish, and more.</p>
+        </div>
+      </div>
+    </div>
+    <div class="req-note">
+      <strong>apfel included.</strong> The download and Homebrew cask bundle <a href="https://apfel.franzai.com">apfel</a> automatically. Nothing extra to install.
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section class="sec-tint" id="install">
+  <div class="wrap">
+    <div class="lbl">Install</div>
+    <h2 class="sh">Get apfel-quick</h2>
+    <p class="sub">Free, signed, and notarised. Apple Silicon only. Pick your favourite way to install.</p>
+
+    <div class="install-grid">
+      <div class="i-card primary">
+        <h3>Download ZIP</h3>
+        <p>Download the zip, unzip, drag <strong>apfel-quick.app</strong> to your Applications folder, and open it. The first-run welcome explains the rest.</p>
+        <a class="btn-xl primary" href="https://github.com/Arthur-Ficial/apfel-quick/releases/download/v1.0.0/apfel-quick-v1.0.0-macos-arm64.zip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Download v1.0.0</a>
+      </div>
+      <div class="i-card">
+        <h3>Homebrew</h3>
+        <p>Best for developers. Stays up to date with <code>brew upgrade apfel-quick</code> and uninstalls cleanly.</p>
+        <pre>brew install Arthur-Ficial/tap/apfel-quick</pre>
+      </div>
+    </div>
+    <p class="i-note">Building from source? Clone the repo at <a href="https://github.com/Arthur-Ficial/apfel-quick">github.com/Arthur-Ficial/apfel-quick</a> and run <code>make install</code>.</p>
+  </div>
+</section>
+
+<!-- Powered by apfel -->
+<section class="sec-white" id="engine">
+  <div class="wrap">
+    <div class="lbl">Under the hood</div>
+    <h2 class="sh">Powered by <a href="https://apfel.franzai.com" style="color:var(--brand-d);text-decoration:none">apfel</a>.</h2>
+    <p class="sub">apfel-quick is a tiny native overlay built on top of <a href="https://apfel.franzai.com">apfel</a>, an open-source CLI and OpenAI-compatible server that wraps the on-device foundation model on your Mac. apfel handles inference. apfel-quick handles the hotkey, the overlay UI, the streaming, the clipboard, and the local math shortcut.</p>
+    <div class="engine-card">
+      <p>Need a full multi-conversation chat app instead? Try <a href="https://apfel-chat.franzai.com">apfel-chat</a>, the sister app with persistent history, voice input, and image analysis.</p>
+      <p class="related">Both apps share the same engine: <a href="https://apfel.franzai.com">apfel.franzai.com</a>. One install, two front-ends.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Open Source -->
+<section class="sec-os">
+  <h2>Free and open source.</h2>
+  <p>MIT-licensed. Use it, fork it, ship it. Bug reports, pull requests, and feature ideas all welcome.</p>
+  <div class="os-links">
+    <a class="btn-purple" href="https://github.com/Arthur-Ficial/apfel-quick" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg> Star on GitHub</a>
+    <a class="btn-outline" href="https://github.com/Arthur-Ficial/apfel-quick/issues" target="_blank" rel="noopener">Report an issue</a>
+    <a class="btn-outline" href="https://github.com/Arthur-Ficial/apfel-quick/releases" target="_blank" rel="noopener">Releases</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="foot-links">
+    <a href="https://github.com/Arthur-Ficial/apfel-quick" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/Arthur-Ficial/apfel-quick/releases" target="_blank" rel="noopener">Releases</a>
+    <a href="https://github.com/Arthur-Ficial/apfel-quick/issues" target="_blank" rel="noopener">Issues</a>
+    <a href="https://apfel-chat.franzai.com" target="_blank" rel="noopener">apfel-chat</a>
+    <a href="https://apfel.franzai.com" target="_blank" rel="noopener">apfel (engine)</a>
+    <a href="https://github.com/Arthur-Ficial/apfel-quick/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+  </div>
+  <p>apfel-quick v1.0.0 &middot; Made with care by <a href="https://github.com/Arthur-Ficial">Arthur Ficial</a> &middot; <a href="https://apfel-quick.franzai.com">apfel-quick.franzai.com</a></p>
+</footer>
+
+<script>
+// Resolve latest release version + versioned zip URL
+fetch('https://api.github.com/repos/Arthur-Ficial/apfel-quick/releases')
+  .then(function(r) { return r.json(); })
+  .then(function(releases) {
+    if (!releases || !releases.length) return;
+    var latest = releases[0];
+    var tag = latest.tag_name;
+    if (!tag) return;
+    var url = 'https://github.com/Arthur-Ficial/apfel-quick/releases/download/' + tag + '/apfel-quick-' + tag + '-macos-arm64.zip';
+    document.querySelectorAll('a[href*="/releases/download/"]').forEach(function(a) {
+      if (a.href.indexOf('apfel-quick-') !== -1) a.href = url;
+    });
+  })
+  .catch(function() {});
+
+// Copy buttons on code blocks
+document.querySelectorAll('pre').forEach(function(pre) {
+  pre.style.position = 'relative';
+  pre.style.cursor = 'pointer';
+  pre.title = 'Click to copy';
+  pre.addEventListener('click', function() {
+    navigator.clipboard.writeText(pre.textContent.trim()).then(function() {
+      var orig = pre.textContent;
+      pre.textContent = 'Copied!';
+      setTimeout(function() { pre.textContent = orig; }, 1200);
+    });
+  });
+});
+</script>
+</body>
+</html>
