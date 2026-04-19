@@ -23,7 +23,7 @@ struct WelcomeOverlayView: View {
                 Text("Welcome to apfel-quick")
                     .font(.system(size: 22, weight: .bold))
 
-                Text("Press Ctrl+Space anywhere to ask anything. The answer streams in and copies to your clipboard automatically. Everything runs on your Mac — no internet needed.")
+                Text("Press Option+Space anywhere to ask anything. The answer streams in and copies to your clipboard automatically. Everything runs on your Mac - no internet needed.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
