@@ -24,6 +24,9 @@ private struct AttributedStringWalker: MarkupWalker {
     private var headingLevel: Int = 0
     private var listDepth: Int = 0
     private var orderedIndex: Int? = nil
+    private var blockQuoteDepth: Int = 0
+    private var isStrikethrough = false
+    private var isTableHeader = false
 
     var result: NSAttributedString { output }
 
@@ -71,13 +74,58 @@ private struct AttributedStringWalker: MarkupWalker {
     mutating func visitListItem(_ item: ListItem) {
         if output.length > 0 { appendNewlines(1) }
         let indent = String(repeating: "  ", count: max(0, listDepth - 1))
-        if let idx = orderedIndex {
+        if let checkbox = item.checkbox {
+            let marker = checkbox == .checked ? "\u{2611} " : "\u{2610} "
+            appendText("\(indent)\(marker)")
+        } else if let idx = orderedIndex {
             appendText("\(indent)\(idx). ")
             orderedIndex = idx + 1
         } else {
             appendText("\(indent)\u{2022} ")
         }
         descendInto(item)
+    }
+
+    mutating func visitBlockQuote(_ blockQuote: BlockQuote) {
+        blockQuoteDepth += 1
+        if output.length > 0 { appendNewlines(1) }
+        descendInto(blockQuote)
+        blockQuoteDepth -= 1
+    }
+
+    mutating func visitTable(_ table: Table) {
+        if output.length > 0 { appendNewlines(2) }
+        descendInto(table)
+    }
+
+    mutating func visitTableHead(_ tableHead: Table.Head) {
+        isTableHeader = true
+        // Render header row as tab-separated bold cells
+        var first = true
+        for cell in tableHead.cells {
+            if !first { appendText("\t") }
+            first = false
+            visit(cell)
+        }
+        isTableHeader = false
+    }
+
+    mutating func visitTableBody(_ tableBody: Table.Body) {
+        descendInto(tableBody)
+    }
+
+    mutating func visitTableRow(_ tableRow: Table.Row) {
+        if output.length > 0 { appendNewlines(1) }
+        var first = true
+        for cell in tableRow.cells {
+            if !first { appendText("\t") }
+            first = false
+            visit(cell)
+        }
+    }
+
+    mutating func visitTableCell(_ tableCell: Table.Cell) {
+        descendInto(tableCell)
     }
 
     // MARK: - Inline elements
@@ -113,6 +161,18 @@ private struct AttributedStringWalker: MarkupWalker {
         linkURL = nil
     }
 
+    mutating func visitStrikethrough(_ strikethrough: Strikethrough) {
+        isStrikethrough = true
+        descendInto(strikethrough)
+        isStrikethrough = false
+    }
+
+    mutating func visitImage(_ image: Markdown.Image) {
+        // Show alt text (the inline children of the image node)
+        appendText("\u{1F5BC} ")
+        descendInto(image)
+    }
+
     mutating func visitSoftBreak(_ softBreak: SoftBreak) {
         appendText(" ")
     }
@@ -132,6 +192,9 @@ private struct AttributedStringWalker: MarkupWalker {
     private func appendText(_ text: String) {
         var attrs: [NSAttributedString.Key: Any] = [:]
 
+        // Determine effective bold state (explicit bold OR table header)
+        let effectiveBold = fontTraits.contains(.bold) || isTableHeader
+
         if isMonospace {
             attrs[.font] = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
             attrs[.backgroundColor] = NSColor.secondarySystemFill
@@ -144,7 +207,7 @@ private struct AttributedStringWalker: MarkupWalker {
             }
             attrs[.font] = NSFont(descriptor: descriptor, size: size)
         } else {
-            let weight: NSFont.Weight = fontTraits.contains(.bold) ? .bold : .regular
+            let weight: NSFont.Weight = effectiveBold ? .bold : .regular
             let base = NSFont.systemFont(ofSize: 14, weight: weight)
             if fontTraits.contains(.italic) {
                 let descriptor = base.fontDescriptor.withSymbolicTraits(
@@ -158,6 +221,16 @@ private struct AttributedStringWalker: MarkupWalker {
         if let url = linkURL {
             attrs[.link] = url
             attrs[.foregroundColor] = NSColor.linkColor
+        }
+
+        // Blockquote styling
+        if blockQuoteDepth > 0 {
+            attrs[.foregroundColor] = NSColor.secondaryLabelColor
+        }
+
+        // Strikethrough
+        if isStrikethrough {
+            attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
 
         output.append(NSAttributedString(string: text, attributes: attrs))
