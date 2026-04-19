@@ -6,10 +6,14 @@ let package = Package(
     platforms: [.macOS(.v26)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-testing.git", from: "0.12.0"),
+        .package(url: "https://github.com/apple/swift-markdown.git", from: "0.5.0"),
     ],
     targets: [
         .executableTarget(
             name: "apfel-quick",
+            dependencies: [
+                .product(name: "Markdown", package: "swift-markdown"),
+            ],
             path: "Sources",
             resources: [
                 .process("Resources")
@@ -29,6 +33,7 @@ let package = Package(
             dependencies: [
                 "apfel-quick",
                 .product(name: "Testing", package: "swift-testing"),
+                .product(name: "Markdown", package: "swift-markdown"),
             ],
             path: "Tests"
         ),

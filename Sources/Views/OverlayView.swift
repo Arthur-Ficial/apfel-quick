@@ -64,15 +64,12 @@ struct OverlayView: View {
             // Divider + result (only shown when there's output or streaming)
             if !viewModel.output.isEmpty || viewModel.isStreaming {
                 Divider()
-                ScrollView {
-                    Text(viewModel.output + (viewModel.isStreaming ? "▋" : ""))
-                        .font(.system(size: 14))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                        .padding(20)
-                }
+                MarkdownTextView(
+                    attributedString: MarkdownRenderer.render(viewModel.output),
+                    isStreaming: viewModel.isStreaming
+                )
                 .frame(maxHeight: 380)
+                .padding(20)
             }
 
             // Error message
