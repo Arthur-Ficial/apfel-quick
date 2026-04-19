@@ -108,4 +108,5 @@ struct OverlayView: View {
 extension Notification.Name {
     static let dismissOverlay = Notification.Name("ApfelQuick.dismissOverlay")
     static let openSettings = Notification.Name("ApfelQuick.openSettings")
+    static let hotkeyChanged = Notification.Name("ApfelQuick.hotkeyChanged")
 }

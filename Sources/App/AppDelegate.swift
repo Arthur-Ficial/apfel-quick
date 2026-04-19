@@ -80,6 +80,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in self?.hideOverlay() }
         }
 
+        // Re-register hotkey when settings change
+        NotificationCenter.default.addObserver(
+            forName: .hotkeyChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.reregisterGlobalHotkey() }
+        }
+
         // Panel auto-resize: observe viewModel state and grow/shrink the panel
         // to fit the current overlay content.
         startPanelSizeObserver(viewModel: viewModel)
@@ -180,14 +189,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Global hotkey (Ctrl+Space)
+    // MARK: - Global hotkey (configurable, default Option+Space)
 
     private func registerGlobalHotkey() {
+        guard let vm = viewModel else { return }
+        let keyCode = vm.settings.hotkeyKeyCode
+        let modifierFlags = NSEvent.ModifierFlags(rawValue: vm.settings.hotkeyModifiers)
+
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control,
-                  event.keyCode == 49 else { return }  // 49 = space
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == modifierFlags,
+                  event.keyCode == keyCode else { return }
             Task { @MainActor [weak self] in self?.toggleOverlay() }
         }
+    }
+
+    func reregisterGlobalHotkey() {
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMonitor = nil
+        }
+        registerGlobalHotkey()
     }
 
     // MARK: - Click-outside dismissal
