@@ -4,8 +4,6 @@ import Combine
 struct OverlayView: View {
     @Bindable var viewModel: QuickViewModel
     @FocusState private var inputFocused: Bool
-    @State private var showSettings = false
-
     /// The send button icon and color change based on state:
     ///  - idle: arrow.up.circle.fill (purple)
     ///  - streaming: stop.fill (purple)
@@ -49,7 +47,8 @@ struct OverlayView: View {
                 .help(viewModel.justCopied ? "Copied to clipboard" : "Send (or press Return)")
 
                 Button {
-                    showSettings = true
+                    NotificationCenter.default.post(
+                        name: .openSettings, object: nil)
                 } label: {
                     Image(systemName: "gear")
                         .foregroundStyle(.secondary)
@@ -95,12 +94,6 @@ struct OverlayView: View {
             }
             NotificationCenter.default.post(name: .dismissOverlay, object: nil)
             return .handled
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(viewModel: viewModel)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
-            showSettings = true
         }
     }
 }

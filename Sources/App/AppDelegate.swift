@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var viewModel: QuickViewModel?
     private var panel: NSPanel?
     private var welcomePanel: NSPanel?
+    private var settingsPanel: NSPanel?
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var mouseMonitor: Any?
@@ -87,6 +88,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in self?.reregisterGlobalHotkey() }
+        }
+
+        // Open settings in its own panel (not .sheet — avoids gray corner artifact)
+        NotificationCenter.default.addObserver(
+            forName: .openSettings,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.showSettingsPanel() }
         }
 
         // Panel auto-resize: observe viewModel state and grow/shrink the panel
@@ -367,8 +377,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettingsFromMenu() {
-        showOverlay()
-        NotificationCenter.default.post(name: .openSettings, object: nil)
+        showSettingsPanel()
     }
 
     @objc private func showWelcomeFromMenu() {
@@ -381,6 +390,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let url = URL(string: "https://apfel-quick.franzai.com") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    // MARK: - Settings panel
+
+    func showSettingsPanel() {
+        if let existing = settingsPanel, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        guard let vm = viewModel else { return }
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 520),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "Settings"
+        panel.level = NSWindow.Level(rawValue: Int(NSWindow.Level.floating.rawValue) + 2)
+        panel.isReleasedWhenClosed = false
+        panel.center()
+
+        let hostingController = NSHostingController(
+            rootView: SettingsView(viewModel: vm)
+        )
+        panel.contentViewController = hostingController
+        self.settingsPanel = panel
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     // MARK: - Welcome panel
