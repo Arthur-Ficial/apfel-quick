@@ -24,9 +24,10 @@ struct OverlayView: View {
         VStack(spacing: 0) {
             // Input row
             HStack(spacing: 8) {
-                TextField("Ask anything…", text: $viewModel.input)
+                TextField("Ask anything…", text: $viewModel.input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.system(size: 17))
+                    .lineLimit(1...4)
                     .focused($inputFocused)
                     .submitLabel(.send)
                     .onSubmit { Task { await viewModel.submit() } }
