@@ -19,6 +19,20 @@ struct SettingsView: View {
 
             Divider()
 
+            // Hotkey
+            HotkeyRecorderView(
+                keyCode: $viewModel.settings.hotkeyKeyCode,
+                modifiers: $viewModel.settings.hotkeyModifiers
+            )
+            .onChange(of: viewModel.settings.hotkeyKeyCode) { _, _ in
+                viewModel.settings.save()
+            }
+            .onChange(of: viewModel.settings.hotkeyModifiers) { _, _ in
+                viewModel.settings.save()
+            }
+
+            Divider()
+
             // Auto-copy
             Toggle("Copy result to clipboard automatically", isOn: $viewModel.settings.autoCopy)
                 .onChange(of: viewModel.settings.autoCopy) { _, _ in viewModel.settings.save() }
