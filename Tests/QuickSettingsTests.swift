@@ -32,8 +32,8 @@ struct QuickSettingsTests {
         let settings = QuickSettings()
         // Space bar key code = 49
         #expect(settings.hotkeyKeyCode == 49)
-        // Control key modifier = NSEvent.ModifierFlags.control.rawValue = 262144
-        #expect(settings.hotkeyModifiers == 262144)
+        // Option key modifier = NSEvent.ModifierFlags.option.rawValue = 524288
+        #expect(settings.hotkeyModifiers == 524288)
     }
 
     // MARK: - 3. Save and load round-trip preserves all fields
@@ -73,7 +73,7 @@ struct QuickSettingsTests {
         #expect(loaded.checkForUpdatesOnLaunch == true)
         #expect(loaded.hasSeenWelcome == false)
         #expect(loaded.hotkeyKeyCode == 49)
-        #expect(loaded.hotkeyModifiers == 262144)
+        #expect(loaded.hotkeyModifiers == 524288)
     }
 
     // MARK: - 5. Load from corrupt data returns defaults
