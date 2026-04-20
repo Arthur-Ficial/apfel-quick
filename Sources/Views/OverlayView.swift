@@ -4,8 +4,6 @@ import Combine
 struct OverlayView: View {
     @Bindable var viewModel: QuickViewModel
     @FocusState private var inputFocused: Bool
-    @State private var showSettings = false
-
     /// The send button icon and color change based on state:
     ///  - idle: arrow.up.circle.fill (purple)
     ///  - streaming: stop.fill (purple)
@@ -26,9 +24,10 @@ struct OverlayView: View {
         VStack(spacing: 0) {
             // Input row
             HStack(spacing: 8) {
-                TextField("Ask anything…", text: $viewModel.input)
+                TextField("Ask anything…", text: $viewModel.input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.system(size: 17))
+                    .lineLimit(1...4)
                     .focused($inputFocused)
                     .submitLabel(.send)
                     .onSubmit { Task { await viewModel.submit() } }
@@ -49,7 +48,8 @@ struct OverlayView: View {
                 .help(viewModel.justCopied ? "Copied to clipboard" : "Send (or press Return)")
 
                 Button {
-                    showSettings = true
+                    NotificationCenter.default.post(
+                        name: .openSettings, object: nil)
                 } label: {
                     Image(systemName: "gear")
                         .foregroundStyle(.secondary)
@@ -64,15 +64,12 @@ struct OverlayView: View {
             // Divider + result (only shown when there's output or streaming)
             if !viewModel.output.isEmpty || viewModel.isStreaming {
                 Divider()
-                ScrollView {
-                    Text(viewModel.output + (viewModel.isStreaming ? "▋" : ""))
-                        .font(.system(size: 14))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                        .padding(20)
-                }
+                MarkdownTextView(
+                    attributedString: MarkdownRenderer.render(viewModel.output),
+                    isStreaming: viewModel.isStreaming
+                )
                 .frame(maxHeight: 380)
+                .padding(20)
             }
 
             // Error message
@@ -96,16 +93,11 @@ struct OverlayView: View {
             NotificationCenter.default.post(name: .dismissOverlay, object: nil)
             return .handled
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(viewModel: viewModel)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
-            showSettings = true
-        }
     }
 }
 
 extension Notification.Name {
     static let dismissOverlay = Notification.Name("ApfelQuick.dismissOverlay")
     static let openSettings = Notification.Name("ApfelQuick.openSettings")
+    static let hotkeyChanged = Notification.Name("ApfelQuick.hotkeyChanged")
 }

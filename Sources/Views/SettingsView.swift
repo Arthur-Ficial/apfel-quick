@@ -3,8 +3,6 @@ import AppKit  // for NSEvent.ModifierFlags
 
 struct SettingsView: View {
     @Bindable var viewModel: QuickViewModel
-    @Environment(\.dismiss) private var dismiss
-
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Header
@@ -12,9 +10,23 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.headline)
                 Spacer()
-                Button("Done") { dismiss() }
+                Button("Done") { NSApp.keyWindow?.close() }
                     .buttonStyle(.plain)
                     .foregroundStyle(.blue)
+            }
+
+            Divider()
+
+            // Hotkey
+            HotkeyRecorderView(
+                keyCode: $viewModel.settings.hotkeyKeyCode,
+                modifiers: $viewModel.settings.hotkeyModifiers
+            )
+            .onChange(of: viewModel.settings.hotkeyKeyCode) { _, _ in
+                viewModel.settings.save()
+            }
+            .onChange(of: viewModel.settings.hotkeyModifiers) { _, _ in
+                viewModel.settings.save()
             }
 
             Divider()
