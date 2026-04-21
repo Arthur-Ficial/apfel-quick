@@ -31,7 +31,7 @@ A Spotlight-style overlay powered entirely by on-device AI. Hit `Ctrl+Space`, ty
 
 apfel-quick puts a private AI assistant one keystroke away. It is a small floating panel that lives above every window — no Dock icon, no menu bar clutter (unless you want it), no browser tab to find.
 
-- **Press the hotkey** — `Ctrl+Space` by default, fully configurable
+- **Press the hotkey** — `Option+Space` by default, fully configurable
 - **Type your prompt** — anything you would ask a chatbot
 - **Press Return** — the answer streams in token by token from your local Foundation Models
 - **Press Escape** — overlay disappears, the result is already on your clipboard, paste it anywhere
@@ -46,7 +46,7 @@ It runs offline. Nothing leaves your Mac. There is no account, no telemetry, no 
 
 | Feature | Details |
 |---|---|
-| **Global hotkey** | Default `Ctrl+Space`, rebindable in settings |
+| **Global hotkey** | Default `Option+Space`, rebindable in settings |
 | **Streaming replies** | Token-by-token SSE from the local apfel server |
 | **Auto-copy** | Result lands on the clipboard the moment streaming finishes (togglable) |
 | **Local math shortcut** | `+ - * / ^ %`, parentheses, `sqrt sin cos tan log ln abs floor ceil round`, constants `pi e`, European decimal comma — all evaluated locally |
@@ -107,7 +107,7 @@ Requires Xcode command-line tools and `apfel` on your `PATH`.
 
 The whole app is one workflow:
 
-1. Press **`Ctrl+Space`** — the overlay appears centred on screen
+1. Press **`Option+Space`** — the overlay appears centred on screen
 2. **Type** your prompt
 3. Press **`Return`** — the reply streams in below the input
 4. Press **`Escape`** — overlay closes, the answer is already on your clipboard
@@ -138,7 +138,7 @@ Open the settings dialog from the overlay to adjust:
 
 | Setting | Default | What it does |
 |---|---|---|
-| **Hotkey** | `Ctrl+Space` | The global key chord that summons the overlay |
+| **Hotkey** | `Option+Space` | The global key chord that summons the overlay |
 | **Auto-copy result** | On | Copies the streamed reply (or math result) to the clipboard automatically |
 | **Launch at login** | On | Starts apfel-quick when you log in via `ServiceManagement` |
 | **Show menu bar icon** | On | Optional status item in the menu bar |
