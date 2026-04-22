@@ -6,5 +6,12 @@
     <!-- Outgoing network — connects to localhost apfel server -->
     <key>com.apple.security.network.client</key>
     <true/>
+    <!-- Microphone access. Under Hardened Runtime (--options runtime)
+         AVCaptureDevice.requestAccess(for: .audio) silently returns denied
+         without this entitlement: the TCC prompt never shows and the app
+         never appears in System Settings → Privacy → Microphone. Seen in
+         production in v1.0.5. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
 </dict>
 </plist>
