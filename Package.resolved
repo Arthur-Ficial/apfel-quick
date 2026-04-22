@@ -1,6 +1,15 @@
 {
-  "originHash" : "7012ee7c4dc564c8517e33bb7099c35271aec1bf93fa6e418242a008676b2ed1",
+  "originHash" : "fc9c069293c5024deca97cbca418e0063fbe837e047034af844ddae8774642c4",
   "pins" : [
+    {
+      "identity" : "apfel-server-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Arthur-Ficial/apfel-server-kit.git",
+      "state" : {
+        "revision" : "f1bc82f10e7d6c5f1e442969c400e70725a4cd63",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "swift-cmark",
       "kind" : "remoteSourceControl",

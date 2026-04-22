@@ -1,4 +1,5 @@
 import Foundation
+import ApfelServerKit
 
 struct ApfelQuickService: QuickService, @unchecked Sendable {
     let baseURL: URL
@@ -25,6 +26,9 @@ struct ApfelQuickService: QuickService, @unchecked Sendable {
         self.modelName = modelName
     }
 
+    /// Build the wire-format URLRequest that streams a chat completion.
+    /// Preserved as a public helper so wire-format tests can inspect it;
+    /// the actual streaming uses `ApfelClient.chatCompletions(_:)` below.
     func buildRequest(prompt: String) throws -> URLRequest {
         let url = URL(string: "/v1/chat/completions", relativeTo: baseURL)!
         var request = URLRequest(url: url)
@@ -44,34 +48,45 @@ struct ApfelQuickService: QuickService, @unchecked Sendable {
     }
 
     func send(prompt: String) -> AsyncThrowingStream<StreamDelta, Error> {
+        let port = baseURL.port ?? 11450
+        let host = baseURL.host ?? "127.0.0.1"
+        let client = ApfelClient(port: port, host: host)
+        let request = ChatRequest(
+            model: modelName,
+            messages: [
+                ChatMessage(role: "system", content: Self.systemPrompt),
+                ChatMessage(role: "user", content: prompt),
+            ],
+            stream: true
+        )
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
-                    let urlRequest = try buildRequest(prompt: prompt)
-                    let (bytes, httpResponse) = try await URLSession.shared.bytes(for: urlRequest)
-
-                    if let statusCode = (httpResponse as? HTTPURLResponse)?.statusCode,
-                       statusCode >= 400 {
-                        var errorData = Data()
-                        for try await byte in bytes { errorData.append(byte) }
-                        let errorText = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                        continuation.finish(throwing: QuickServiceError.serverError(errorText))
-                        return
-                    }
-
-                    for try await line in bytes.lines {
-                        if line.hasPrefix("data: [DONE]") { break }
-                        if let error = SSEParser.parseError(line: line) {
-                            continuation.finish(throwing: QuickServiceError.streamError(error.message))
-                            return
-                        }
-                        if let delta = SSEParser.parse(line: line) {
-                            continuation.yield(delta)
-                        }
+                    for try await delta in client.chatCompletions(request) {
+                        continuation.yield(
+                            StreamDelta(text: delta.text, finishReason: delta.finishReason)
+                        )
                     }
                     continuation.finish()
                 } catch is CancellationError {
                     continuation.finish()
+                } catch let error as ApfelClientError {
+                    switch error {
+                    case .httpStatus(let code):
+                        continuation.finish(
+                            throwing: QuickServiceError.serverError("HTTP \(code)")
+                        )
+                    case .stream(let message):
+                        continuation.finish(
+                            throwing: QuickServiceError.streamError(message)
+                        )
+                    case .invalidURL:
+                        continuation.finish(
+                            throwing: QuickServiceError.connectionFailed(
+                                "Could not build request URL from host/port"
+                            )
+                        )
+                    }
                 } catch {
                     continuation.finish(
                         throwing: QuickServiceError.connectionFailed(
@@ -80,6 +95,7 @@ struct ApfelQuickService: QuickService, @unchecked Sendable {
                     )
                 }
             }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
 
