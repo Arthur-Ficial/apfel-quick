@@ -25,6 +25,9 @@ struct QuickSettings: Codable, Sendable {
     // Appearance
     var appearance: AppearancePreference = .system
 
+    // MCP servers (attached to apfel --serve at launch)
+    var mcpServers: [MCPServerConfig] = []
+
     // Persistence key
     static let defaultsKey = "QuickSettings"
 
@@ -43,6 +46,7 @@ struct QuickSettings: Codable, Sendable {
         savedPromptPrefix = try c.decodeIfPresent(String.self, forKey: .savedPromptPrefix) ?? "/"
         savedPrompts = try c.decodeIfPresent([SavedPrompt].self, forKey: .savedPrompts) ?? SavedPrompt.defaults
         appearance = try c.decodeIfPresent(AppearancePreference.self, forKey: .appearance) ?? .system
+        mcpServers = try c.decodeIfPresent([MCPServerConfig].self, forKey: .mcpServers) ?? []
     }
 
     init() {}

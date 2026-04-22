@@ -19,8 +19,10 @@ final class ServerManager {
     private(set) var state: State = .idle
     private let backing: ApfelServer
 
-    init() {
-        self.backing = ApfelServer()
+    init(settings: QuickSettings = .load()) {
+        self.backing = ApfelServer(
+            arguments: ApfelArgumentsBuilder.build(mcpServers: settings.mcpServers)
+        )
     }
 
     // MARK: - Static helpers kept for call-site and test compatibility
