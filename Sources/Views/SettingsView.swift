@@ -69,6 +69,10 @@ struct SettingsView: View {
                 .onChange(of: viewModel.settings.appearance) { _, _ in viewModel.settings.save() }
             }
 
+            Divider()
+
+            MCPServersEditor(viewModel: viewModel)
+
             // Show welcome screen on next launch
             Toggle("Show welcome screen on next launch", isOn: Binding(
                 get: { !viewModel.settings.hasSeenWelcome },
@@ -107,7 +111,7 @@ struct SettingsView: View {
             }
         }
         .padding(28)
-        .frame(width: 560, height: 820)
+        .frame(width: 560, height: 960)
         .background(Color(NSColor.windowBackgroundColor))
         .preferredColorScheme(viewModel.settings.appearance.swiftUIColorScheme)
     }
