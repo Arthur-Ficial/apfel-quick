@@ -61,6 +61,33 @@ struct OverlayView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
 
+            // Saved-prompt autocomplete
+            if !viewModel.savedPromptMatches.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(viewModel.savedPromptMatches) { match in
+                        Button {
+                            viewModel.complete(savedPrompt: match)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Text(viewModel.settings.savedPromptPrefix + match.alias)
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(Color(red: 0.55, green: 0.36, blue: 0.96))
+                                Text(match.prompt)
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
             // Divider + result (only shown when there's output or streaming)
             if !viewModel.output.isEmpty || viewModel.isStreaming {
                 Divider()

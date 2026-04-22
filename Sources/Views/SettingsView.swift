@@ -31,6 +31,10 @@ struct SettingsView: View {
 
             Divider()
 
+            SavedPromptsEditor(viewModel: viewModel)
+
+            Divider()
+
             // Auto-copy
             Toggle("Copy result to clipboard automatically", isOn: $viewModel.settings.autoCopy)
                 .onChange(of: viewModel.settings.autoCopy) { _, _ in viewModel.settings.save() }
@@ -88,7 +92,7 @@ struct SettingsView: View {
             }
         }
         .padding(28)
-        .frame(width: 480, height: 520)
+        .frame(width: 560, height: 780)
         .background(.white)
         .preferredColorScheme(.light)
     }

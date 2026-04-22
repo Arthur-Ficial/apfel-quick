@@ -18,8 +18,30 @@ struct QuickSettings: Codable, Sendable {
     var hasSeenWelcome: Bool = false
     var launchAtLoginPromptShown: Bool = false
 
+    // Saved prompts (aliases)
+    var savedPromptPrefix: String = "/"
+    var savedPrompts: [SavedPrompt] = SavedPrompt.defaults
+
     // Persistence key
     static let defaultsKey = "QuickSettings"
+
+    // Custom decoder so settings blobs written before a field was added
+    // still load cleanly, falling back to each field's default.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hotkeyKeyCode = try c.decodeIfPresent(UInt16.self, forKey: .hotkeyKeyCode) ?? 49
+        hotkeyModifiers = try c.decodeIfPresent(UInt.self, forKey: .hotkeyModifiers) ?? 524288
+        autoCopy = try c.decodeIfPresent(Bool.self, forKey: .autoCopy) ?? true
+        launchAtLogin = try c.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
+        showMenuBar = try c.decodeIfPresent(Bool.self, forKey: .showMenuBar) ?? true
+        checkForUpdatesOnLaunch = try c.decodeIfPresent(Bool.self, forKey: .checkForUpdatesOnLaunch) ?? true
+        hasSeenWelcome = try c.decodeIfPresent(Bool.self, forKey: .hasSeenWelcome) ?? false
+        launchAtLoginPromptShown = try c.decodeIfPresent(Bool.self, forKey: .launchAtLoginPromptShown) ?? false
+        savedPromptPrefix = try c.decodeIfPresent(String.self, forKey: .savedPromptPrefix) ?? "/"
+        savedPrompts = try c.decodeIfPresent([SavedPrompt].self, forKey: .savedPrompts) ?? SavedPrompt.defaults
+    }
+
+    init() {}
 }
 
 extension QuickSettings {

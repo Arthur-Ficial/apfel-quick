@@ -46,14 +46,40 @@ import Observation
 
     // MARK: - Submit
 
+    /// Saved-prompt aliases matching the current `input`, sorted alphabetically.
+    /// Empty whenever the input is not a prefix-based command.
+    var savedPromptMatches: [SavedPrompt] {
+        SavedPromptResolver.matches(
+            input: input,
+            prefix: settings.savedPromptPrefix,
+            savedPrompts: settings.savedPrompts
+        )
+    }
+
+    /// Replace `input` with `<prefix><alias> ` so the user can keep typing
+    /// context after committing to a saved prompt.
+    func complete(savedPrompt: SavedPrompt) {
+        input = settings.savedPromptPrefix + savedPrompt.alias + " "
+    }
+
     func submit() async {
         guard !input.isEmpty else { return }
 
+        // Expand saved-prompt aliases before anything else. Non-matches
+        // (including inputs that look like `/foo` but reference an unknown
+        // alias) fall through to the regular path below.
+        let resolved = SavedPromptResolver.resolve(
+            input: input,
+            prefix: settings.savedPromptPrefix,
+            savedPrompts: settings.savedPrompts
+        )
+        let effectivePrompt = resolved ?? input
+
         // Math shortcut — evaluate locally without the AI
-        if MathExpressionDetector.isMathExpression(input) {
+        if MathExpressionDetector.isMathExpression(effectivePrompt) {
             errorMessage = nil
             do {
-                let result = try MathCalculator.evaluate(input)
+                let result = try MathCalculator.evaluate(effectivePrompt)
                 output = MathCalculator.format(result)
                 if settings.autoCopy {
                     copyOutput()
@@ -76,7 +102,7 @@ import Observation
             return
         }
 
-        let stream = service.send(prompt: input)
+        let stream = service.send(prompt: effectivePrompt)
 
         streamTask = Task {
             do {
