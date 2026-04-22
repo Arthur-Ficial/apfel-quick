@@ -166,13 +166,21 @@ import ApfelServerKit
         let transcriber = VoiceTranscriber(
             binaryFinder: {
                 if let pathOverride, !pathOverride.isEmpty { return pathOverride }
-                return ApfelBinaryFinder.find(name: "ohr")
-            }
+                return AppBundledBinaryFinder.find(name: "ohr")
+            },
+            language: settings.voiceLanguage
         )
         do {
             try await transcriber.start()
         } catch VoiceTranscriberError.binaryNotFound {
             errorMessage = "ohr not found. Install: brew install Arthur-Ficial/tap/ohr"
+            return
+        } catch VoiceTranscriberError.microphoneDenied {
+            errorMessage = "Microphone access denied. Enable apfel-quick in System Settings → Privacy & Security → Microphone."
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+            return
+        } catch VoiceTranscriberError.microphoneRestricted {
+            errorMessage = "Microphone access restricted by system policy."
             return
         } catch {
             errorMessage = "Voice start failed: \(error.localizedDescription)"
@@ -183,14 +191,13 @@ import ApfelServerKit
         errorMessage = nil
         voiceTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await line in await transcriber.lines {
+            let base = self.input
+            var transcribed = ""
+            for await segment in await transcriber.segments {
                 if Task.isCancelled { break }
-                // Append transcribed text to whatever is already in the input.
-                if self.input.isEmpty {
-                    self.input = line
-                } else {
-                    self.input = self.input + " " + line
-                }
+                transcribed += segment.text
+                let trimmed = transcribed.trimmingCharacters(in: .whitespaces)
+                self.input = base.isEmpty ? trimmed : base + " " + trimmed
             }
             self.isRecording = false
         }

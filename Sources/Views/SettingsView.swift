@@ -1,167 +1,267 @@
 import SwiftUI
-import AppKit  // for NSEvent.ModifierFlags
+import AppKit
 
+/// Tabbed, scrollable Settings window. Each tab is its own focused pane so
+/// the view fits on a laptop display without clipping.
 struct SettingsView: View {
     @Bindable var viewModel: QuickViewModel
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header
-            HStack {
-                Text("Settings")
-                    .font(.headline)
-                Spacer()
-                Button("Done") { NSApp.keyWindow?.close() }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.blue)
-            }
+        TabView {
+            GeneralTab(viewModel: viewModel)
+                .tabItem { Label("General", systemImage: "gear") }
 
-            Divider()
+            SavedPromptsTab(viewModel: viewModel)
+                .tabItem { Label("Prompts", systemImage: "text.quote") }
 
-            // Hotkey
-            HotkeyRecorderView(
-                keyCode: $viewModel.settings.hotkeyKeyCode,
-                modifiers: $viewModel.settings.hotkeyModifiers
-            )
-            .onChange(of: viewModel.settings.hotkeyKeyCode) { _, _ in
-                viewModel.settings.save()
-            }
-            .onChange(of: viewModel.settings.hotkeyModifiers) { _, _ in
-                viewModel.settings.save()
-            }
+            VoiceTab(viewModel: viewModel)
+                .tabItem { Label("Voice", systemImage: "mic") }
 
-            Divider()
+            MCPTab(viewModel: viewModel)
+                .tabItem { Label("MCP", systemImage: "puzzlepiece.extension") }
 
-            SavedPromptsEditor(viewModel: viewModel)
+            AboutTab(viewModel: viewModel)
+                .tabItem { Label("About", systemImage: "info.circle") }
+        }
+        .frame(width: 600, height: 560)
+        .background(Color(NSColor.windowBackgroundColor))
+        .preferredColorScheme(viewModel.settings.appearance.swiftUIColorScheme)
+    }
+}
 
-            Divider()
+// MARK: - General
 
-            // Auto-copy
-            Toggle("Copy result to clipboard automatically", isOn: $viewModel.settings.autoCopy)
-                .onChange(of: viewModel.settings.autoCopy) { _, _ in viewModel.settings.save() }
+private struct GeneralTab: View {
+    @Bindable var viewModel: QuickViewModel
 
-            // Launch at login
-            Toggle("Launch at login", isOn: $viewModel.settings.launchAtLogin)
-                .onChange(of: viewModel.settings.launchAtLogin) { [weak viewModel] _, _ in
-                    viewModel?.settings.save()
-                    viewModel?.applyLaunchAtLogin()
-                }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("General").font(.headline)
 
-            // Show in menu bar
-            Toggle("Show menu bar icon", isOn: $viewModel.settings.showMenuBar)
-                .onChange(of: viewModel.settings.showMenuBar) { _, _ in viewModel.settings.save() }
+                HotkeyRecorderView(
+                    keyCode: $viewModel.settings.hotkeyKeyCode,
+                    modifiers: $viewModel.settings.hotkeyModifiers
+                )
+                .onChange(of: viewModel.settings.hotkeyKeyCode) { _, _ in viewModel.settings.save() }
+                .onChange(of: viewModel.settings.hotkeyModifiers) { _, _ in viewModel.settings.save() }
 
-            // Check for updates on launch
-            Toggle("Check for updates on launch", isOn: $viewModel.settings.checkForUpdatesOnLaunch)
-                .onChange(of: viewModel.settings.checkForUpdatesOnLaunch) { _, _ in viewModel.settings.save() }
+                Divider()
 
-            // Appearance
-            HStack {
-                Text("Appearance")
-                Spacer()
-                Picker("", selection: $viewModel.settings.appearance) {
-                    ForEach(AppearancePreference.allCases, id: \.self) { pref in
-                        Text(pref.displayName).tag(pref)
+                Toggle("Copy result to clipboard automatically", isOn: $viewModel.settings.autoCopy)
+                    .onChange(of: viewModel.settings.autoCopy) { _, _ in viewModel.settings.save() }
+
+                Toggle("Launch at login", isOn: $viewModel.settings.launchAtLogin)
+                    .onChange(of: viewModel.settings.launchAtLogin) { [weak viewModel] _, _ in
+                        viewModel?.settings.save()
+                        viewModel?.applyLaunchAtLogin()
                     }
+
+                Toggle("Show menu bar icon", isOn: $viewModel.settings.showMenuBar)
+                    .onChange(of: viewModel.settings.showMenuBar) { _, _ in viewModel.settings.save() }
+
+                Toggle("Check for updates on launch", isOn: $viewModel.settings.checkForUpdatesOnLaunch)
+                    .onChange(of: viewModel.settings.checkForUpdatesOnLaunch) { _, _ in viewModel.settings.save() }
+
+                Toggle("Show welcome screen on next launch", isOn: Binding(
+                    get: { !viewModel.settings.hasSeenWelcome },
+                    set: { newValue in
+                        viewModel.settings.hasSeenWelcome = !newValue
+                        viewModel.settings.save()
+                    }
+                ))
+
+                Divider()
+
+                HStack {
+                    Text("Appearance")
+                    Spacer()
+                    Picker("", selection: $viewModel.settings.appearance) {
+                        ForEach(AppearancePreference.allCases, id: \.self) { pref in
+                            Text(pref.displayName).tag(pref)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 300)
+                    .onChange(of: viewModel.settings.appearance) { _, _ in viewModel.settings.save() }
                 }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 280)
-                .onChange(of: viewModel.settings.appearance) { _, _ in viewModel.settings.save() }
             }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
 
-            Divider()
+// MARK: - Prompts
 
-            // Voice (ohr) - only the toggle lives at the top level; power users
-            // can pin a custom binary path here too.
-            Toggle("Enable voice input (requires ohr)", isOn: $viewModel.settings.voiceEnabled)
-                .onChange(of: viewModel.settings.voiceEnabled) { _, _ in viewModel.settings.save() }
+private struct SavedPromptsTab: View {
+    @Bindable var viewModel: QuickViewModel
 
-            if viewModel.settings.voiceEnabled {
-                HStack(spacing: 8) {
-                    Text("ohr path:")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 11))
-                    TextField(
-                        "auto-detect",
-                        text: Binding(
-                            get: { viewModel.settings.ohrBinaryPathOverride ?? "" },
-                            set: { newValue in
-                                viewModel.settings.ohrBinaryPathOverride =
-                                    newValue.isEmpty ? nil : newValue
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                SavedPromptsEditor(viewModel: viewModel)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Voice
+
+private struct VoiceTab: View {
+    @Bindable var viewModel: QuickViewModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Voice input (ohr)").font(.headline)
+
+                Toggle("Enable voice input", isOn: $viewModel.settings.voiceEnabled)
+                    .onChange(of: viewModel.settings.voiceEnabled) { _, _ in viewModel.settings.save() }
+
+                if viewModel.settings.voiceEnabled {
+                    Divider()
+
+                    HStack(spacing: 8) {
+                        Text("Language")
+                            .frame(width: 90, alignment: .leading)
+                        TextField(
+                            "en-US",
+                            text: $viewModel.settings.voiceLanguage
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 140)
+                        .onChange(of: viewModel.settings.voiceLanguage) { _, _ in viewModel.settings.save() }
+                    }
+
+                    HStack(spacing: 8) {
+                        Text("ohr path")
+                            .frame(width: 90, alignment: .leading)
+                        TextField(
+                            "auto-detect",
+                            text: Binding(
+                                get: { viewModel.settings.ohrBinaryPathOverride ?? "" },
+                                set: { newValue in
+                                    viewModel.settings.ohrBinaryPathOverride =
+                                        newValue.isEmpty ? nil : newValue
+                                    viewModel.settings.save()
+                                }
+                            )
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        Button("Browse...") {
+                            let panel = NSOpenPanel()
+                            panel.canChooseFiles = true
+                            panel.canChooseDirectories = false
+                            panel.allowsMultipleSelection = false
+                            if panel.runModal() == .OK, let url = panel.url {
+                                viewModel.settings.ohrBinaryPathOverride = url.path
                                 viewModel.settings.save()
                             }
-                        )
-                    )
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 11))
+                        }
+                    }
+
+                    Divider()
+
+                    Text("How it works")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Tap the mic button in the overlay to start. apfel-quick spawns `ohr --listen -o json --language \(viewModel.settings.voiceLanguage)` and streams decoded segments into the input as you speak. Tap the mic again to stop.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("If you see an 'ohr not found' error, install it with:\n  brew install Arthur-Ficial/tap/ohr")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(Color.secondary.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
             }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
 
-            Divider()
+// MARK: - MCP
 
-            MCPServersEditor(viewModel: viewModel)
+private struct MCPTab: View {
+    @Bindable var viewModel: QuickViewModel
 
-            // Show welcome screen on next launch
-            Toggle("Show welcome screen on next launch", isOn: Binding(
-                get: { !viewModel.settings.hasSeenWelcome },
-                set: { newValue in
-                    viewModel.settings.hasSeenWelcome = !newValue
-                    viewModel.settings.save()
-                }
-            ))
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                MCPServersEditor(viewModel: viewModel)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
 
-            Divider()
+// MARK: - About
 
-            // Update status
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
+private struct AboutTab: View {
+    @Bindable var viewModel: QuickViewModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("About").font(.headline)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("apfel-quick")
+                        .font(.system(size: 15, weight: .semibold))
                     Text("Version \(viewModel.currentVersion)")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+                }
+
+                HStack {
                     updateStatusView
+                    Spacer()
+                    Button("Check for update") {
+                        Task { await viewModel.checkForUpdateManual() }
+                    }
+                    .disabled(viewModel.updateState == .checking)
                 }
-                Spacer()
-                Button("Check for Update") {
-                    Task { await viewModel.checkForUpdateManual() }
-                }
-                .disabled(viewModel.updateState == .checking)
-            }
 
-            Spacer()
+                Divider()
 
-            // GitHub link
-            HStack {
-                Spacer()
-                Link("View on GitHub", destination: URL(string: "https://github.com/Arthur-Ficial/apfel-quick")!)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                Spacer()
+                Link(
+                    "Source on GitHub",
+                    destination: URL(string: "https://github.com/Arthur-Ficial/apfel-quick")!
+                )
+                .font(.system(size: 12))
             }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(28)
-        .frame(width: 560, height: 960)
-        .background(Color(NSColor.windowBackgroundColor))
-        .preferredColorScheme(viewModel.settings.appearance.swiftUIColorScheme)
     }
 
     @ViewBuilder
     private var updateStatusView: some View {
         switch viewModel.updateState {
         case .checking:
-            Text("Checking…").font(.system(size: 11)).foregroundStyle(.secondary)
+            Text("Checking…").font(.system(size: 12)).foregroundStyle(.secondary)
         case .upToDate:
-            Text("Up to date").font(.system(size: 11)).foregroundStyle(.green)
+            Text("Up to date").font(.system(size: 12)).foregroundStyle(.green)
         case .updateAvailable(let v):
             Button("Update to \(v)") { [weak viewModel] in viewModel?.installUpdate() }
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundStyle(.blue)
                 .buttonStyle(.plain)
         case .installing(let v):
-            Text("Installing \(v)…").font(.system(size: 11)).foregroundStyle(.secondary)
+            Text("Installing \(v)…").font(.system(size: 12)).foregroundStyle(.secondary)
         case .installed(let v):
-            Text("Installed \(v)").font(.system(size: 11)).foregroundStyle(.green)
+            Text("Installed \(v)").font(.system(size: 12)).foregroundStyle(.green)
         case .error(let msg):
-            Text(msg).font(.system(size: 11)).foregroundStyle(.red)
+            Text(msg).font(.system(size: 12)).foregroundStyle(.red)
         case .idle:
             EmptyView()
         }

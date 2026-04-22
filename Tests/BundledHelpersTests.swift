@@ -40,4 +40,20 @@ struct BundledHelpersTests {
             "sign_bundle must sign Contents/Helpers/apfel before the outer bundle"
         )
     }
+
+    @Test("build-app.sh embeds the ohr helper")
+    func ohrEmbedded() {
+        #expect(
+            Self.buildScript.contains("Contents/Helpers/ohr"),
+            "build-app.sh must copy ohr into Contents/Helpers — voice input needs ohr bundled, not a surprise brew dependency"
+        )
+    }
+
+    @Test("build-app.sh signs ohr with the app's entitlements")
+    func ohrSignedWithEntitlements() {
+        #expect(
+            Self.buildScript.contains("\"$APP_BUNDLE/Contents/Helpers/ohr\" --entitlements"),
+            "sign_bundle must sign ohr with the parent app's entitlements so macOS TCC treats the spawned subprocess as part of the parent app for microphone grants"
+        )
+    }
 }

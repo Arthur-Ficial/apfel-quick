@@ -31,6 +31,7 @@ struct QuickSettings: Codable, Sendable {
     // Voice input (ohr)
     var voiceEnabled: Bool = true
     var ohrBinaryPathOverride: String?
+    var voiceLanguage: String = "en-US"
 
     // Persistence key
     static let defaultsKey = "QuickSettings"
@@ -53,6 +54,7 @@ struct QuickSettings: Codable, Sendable {
         mcpServers = try c.decodeIfPresent([MCPServerConfig].self, forKey: .mcpServers) ?? []
         voiceEnabled = try c.decodeIfPresent(Bool.self, forKey: .voiceEnabled) ?? true
         ohrBinaryPathOverride = try c.decodeIfPresent(String.self, forKey: .ohrBinaryPathOverride)
+        voiceLanguage = try c.decodeIfPresent(String.self, forKey: .voiceLanguage) ?? "en-US"
     }
 
     init() {}

@@ -19,6 +19,16 @@ resolve_helper() {
     return 1
 }
 
+resolve_ohr_helper() {
+    if [[ -n "${OHR_HELPER_PATH:-}" && -x "${OHR_HELPER_PATH}" ]]; then
+        print -- "${OHR_HELPER_PATH}"; return 0
+    fi
+    if command -v ohr >/dev/null 2>&1; then
+        command -v ohr; return 0
+    fi
+    return 1
+}
+
 codesign_path() {
     local target="$1"
     shift || true
@@ -33,9 +43,19 @@ codesign_path() {
 sign_bundle() {
     xattr -cr "$APP_BUNDLE" 2>/dev/null || true
 
-    # Sign embedded helper first (before signing the bundle)
+    # Sign embedded helpers first (before signing the bundle)
     if [[ -x "$APP_BUNDLE/Contents/Helpers/apfel" ]]; then
         codesign_path "$APP_BUNDLE/Contents/Helpers/apfel"
+    fi
+    # ohr is the mic helper. Sign with the parent's entitlements so when
+    # apfel-quick spawns it, macOS TCC treats the child as part of the parent
+    # app's identity and the microphone grant flows through.
+    if [[ -x "$APP_BUNDLE/Contents/Helpers/ohr" ]]; then
+        if [[ -n "$ENTITLEMENTS" && -f "$ENTITLEMENTS" ]]; then
+            codesign_path "$APP_BUNDLE/Contents/Helpers/ohr" --entitlements "$ENTITLEMENTS"
+        else
+            codesign_path "$APP_BUNDLE/Contents/Helpers/ohr"
+        fi
     fi
 
     if [[ -n "$ENTITLEMENTS" && -f "$ENTITLEMENTS" ]]; then
@@ -72,6 +92,17 @@ if HELPER_PATH="$(resolve_helper 2>/dev/null)"; then
 else
     print "==> ERROR: apfel not found on this build host." >&2
     print "==> Every GUI release must ship with all dependencies bundled. Install apfel (brew install apfel) or set APFEL_HELPER_PATH and rerun." >&2
+    exit 1
+fi
+
+if OHR_HELPER="$(resolve_ohr_helper 2>/dev/null)"; then
+    print "==> Embedding ohr helper from ${OHR_HELPER}"
+    cp "$OHR_HELPER" "$APP_BUNDLE/Contents/Helpers/ohr"
+    chmod +x "$APP_BUNDLE/Contents/Helpers/ohr"
+else
+    print "==> ERROR: ohr not found on this build host." >&2
+    print "==> apfel-quick ships with voice input: bundle ohr with every release." >&2
+    print "==> Install: brew install Arthur-Ficial/tap/ohr  (or set OHR_HELPER_PATH)." >&2
     exit 1
 fi
 
