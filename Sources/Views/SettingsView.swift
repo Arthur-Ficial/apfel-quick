@@ -71,6 +71,34 @@ struct SettingsView: View {
 
             Divider()
 
+            // Voice (ohr) - only the toggle lives at the top level; power users
+            // can pin a custom binary path here too.
+            Toggle("Enable voice input (requires ohr)", isOn: $viewModel.settings.voiceEnabled)
+                .onChange(of: viewModel.settings.voiceEnabled) { _, _ in viewModel.settings.save() }
+
+            if viewModel.settings.voiceEnabled {
+                HStack(spacing: 8) {
+                    Text("ohr path:")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                    TextField(
+                        "auto-detect",
+                        text: Binding(
+                            get: { viewModel.settings.ohrBinaryPathOverride ?? "" },
+                            set: { newValue in
+                                viewModel.settings.ohrBinaryPathOverride =
+                                    newValue.isEmpty ? nil : newValue
+                                viewModel.settings.save()
+                            }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 11))
+                }
+            }
+
+            Divider()
+
             MCPServersEditor(viewModel: viewModel)
 
             // Show welcome screen on next launch

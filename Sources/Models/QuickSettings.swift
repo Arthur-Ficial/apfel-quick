@@ -28,6 +28,10 @@ struct QuickSettings: Codable, Sendable {
     // MCP servers (attached to apfel --serve at launch)
     var mcpServers: [MCPServerConfig] = []
 
+    // Voice input (ohr)
+    var voiceEnabled: Bool = true
+    var ohrBinaryPathOverride: String?
+
     // Persistence key
     static let defaultsKey = "QuickSettings"
 
@@ -47,6 +51,8 @@ struct QuickSettings: Codable, Sendable {
         savedPrompts = try c.decodeIfPresent([SavedPrompt].self, forKey: .savedPrompts) ?? SavedPrompt.defaults
         appearance = try c.decodeIfPresent(AppearancePreference.self, forKey: .appearance) ?? .system
         mcpServers = try c.decodeIfPresent([MCPServerConfig].self, forKey: .mcpServers) ?? []
+        voiceEnabled = try c.decodeIfPresent(Bool.self, forKey: .voiceEnabled) ?? true
+        ohrBinaryPathOverride = try c.decodeIfPresent(String.self, forKey: .ohrBinaryPathOverride)
     }
 
     init() {}

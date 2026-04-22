@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Observation
+import ApfelServerKit
 
 @Observable @MainActor final class QuickViewModel {
 
@@ -9,11 +10,15 @@ import Observation
     var input: String = ""
     var output: String = ""
     var isStreaming: Bool = false
+    var isRecording: Bool = false
     var errorMessage: String? = nil
     var settings: QuickSettings
     var updateState: UpdateState = .idle
     /// True briefly after auto-copy fires, so the UI can flash a "Copied!" indicator.
     var justCopied: Bool = false
+
+    @ObservationIgnored private var voiceTask: Task<Void, Never>?
+    @ObservationIgnored private var voiceTranscriber: VoiceTranscriber?
 
     // MARK: - Dependencies
 
@@ -142,6 +147,61 @@ import Observation
             try? await Task.sleep(for: pollInterval)
         }
         return service
+    }
+
+    // MARK: - Voice (ohr)
+
+    /// Start or stop ohr-backed voice transcription. Toggles `isRecording`.
+    func toggleVoice() async {
+        if isRecording {
+            await stopVoice()
+        } else {
+            await startVoice()
+        }
+    }
+
+    private func startVoice() async {
+        guard !isRecording else { return }
+        let pathOverride = settings.ohrBinaryPathOverride
+        let transcriber = VoiceTranscriber(
+            binaryFinder: {
+                if let pathOverride, !pathOverride.isEmpty { return pathOverride }
+                return ApfelBinaryFinder.find(name: "ohr")
+            }
+        )
+        do {
+            try await transcriber.start()
+        } catch VoiceTranscriberError.binaryNotFound {
+            errorMessage = "ohr not found. Install: brew install Arthur-Ficial/tap/ohr"
+            return
+        } catch {
+            errorMessage = "Voice start failed: \(error.localizedDescription)"
+            return
+        }
+        voiceTranscriber = transcriber
+        isRecording = true
+        errorMessage = nil
+        voiceTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await line in await transcriber.lines {
+                if Task.isCancelled { break }
+                // Append transcribed text to whatever is already in the input.
+                if self.input.isEmpty {
+                    self.input = line
+                } else {
+                    self.input = self.input + " " + line
+                }
+            }
+            self.isRecording = false
+        }
+    }
+
+    private func stopVoice() async {
+        await voiceTranscriber?.stop()
+        voiceTranscriber = nil
+        voiceTask?.cancel()
+        voiceTask = nil
+        isRecording = false
     }
 
     // MARK: - Cancel

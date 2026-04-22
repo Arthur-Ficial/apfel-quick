@@ -33,6 +33,24 @@ struct OverlayView: View {
                     .onSubmit { Task { await viewModel.submit() } }
                     .disabled(viewModel.isStreaming)
 
+                // Voice (ohr) mic button — hidden when the user disables voice in settings
+                if viewModel.settings.voiceEnabled {
+                    Button {
+                        Task { await viewModel.toggleVoice() }
+                    } label: {
+                        Image(systemName: viewModel.isRecording ? "mic.fill" : "mic")
+                            .foregroundStyle(
+                                viewModel.isRecording
+                                    ? Color(red: 0.90, green: 0.25, blue: 0.25)
+                                    : Color.secondary
+                            )
+                            .font(.system(size: 16))
+                            .symbolEffect(.pulse, isActive: viewModel.isRecording)
+                    }
+                    .buttonStyle(.plain)
+                    .help(viewModel.isRecording ? "Stop listening" : "Voice (ohr)")
+                }
+
                 // Send / stop / copied indicator — same slot, different icon
                 Button {
                     Task { await viewModel.submit() }
