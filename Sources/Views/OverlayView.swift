@@ -109,9 +109,9 @@ struct OverlayView: View {
                     .padding(.vertical, 8)
             }
         }
-        .background(.white)
+        .background(Color(NSColor.windowBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .preferredColorScheme(.light)
+        .preferredColorScheme(viewModel.settings.appearance.swiftUIColorScheme)
         .onAppear { inputFocused = true }
         .onKeyPress(.escape) {
             if viewModel.isStreaming {

@@ -54,6 +54,21 @@ struct SettingsView: View {
             Toggle("Check for updates on launch", isOn: $viewModel.settings.checkForUpdatesOnLaunch)
                 .onChange(of: viewModel.settings.checkForUpdatesOnLaunch) { _, _ in viewModel.settings.save() }
 
+            // Appearance
+            HStack {
+                Text("Appearance")
+                Spacer()
+                Picker("", selection: $viewModel.settings.appearance) {
+                    ForEach(AppearancePreference.allCases, id: \.self) { pref in
+                        Text(pref.displayName).tag(pref)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 280)
+                .onChange(of: viewModel.settings.appearance) { _, _ in viewModel.settings.save() }
+            }
+
             // Show welcome screen on next launch
             Toggle("Show welcome screen on next launch", isOn: Binding(
                 get: { !viewModel.settings.hasSeenWelcome },
@@ -92,9 +107,9 @@ struct SettingsView: View {
             }
         }
         .padding(28)
-        .frame(width: 560, height: 780)
-        .background(.white)
-        .preferredColorScheme(.light)
+        .frame(width: 560, height: 820)
+        .background(Color(NSColor.windowBackgroundColor))
+        .preferredColorScheme(viewModel.settings.appearance.swiftUIColorScheme)
     }
 
     @ViewBuilder

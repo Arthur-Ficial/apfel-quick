@@ -22,6 +22,9 @@ struct QuickSettings: Codable, Sendable {
     var savedPromptPrefix: String = "/"
     var savedPrompts: [SavedPrompt] = SavedPrompt.defaults
 
+    // Appearance
+    var appearance: AppearancePreference = .system
+
     // Persistence key
     static let defaultsKey = "QuickSettings"
 
@@ -39,6 +42,7 @@ struct QuickSettings: Codable, Sendable {
         launchAtLoginPromptShown = try c.decodeIfPresent(Bool.self, forKey: .launchAtLoginPromptShown) ?? false
         savedPromptPrefix = try c.decodeIfPresent(String.self, forKey: .savedPromptPrefix) ?? "/"
         savedPrompts = try c.decodeIfPresent([SavedPrompt].self, forKey: .savedPrompts) ?? SavedPrompt.defaults
+        appearance = try c.decodeIfPresent(AppearancePreference.self, forKey: .appearance) ?? .system
     }
 
     init() {}
