@@ -13,6 +13,61 @@ struct MarkdownRendererTests {
         #expect(result.string == "Hello world")
     }
 
+    // MARK: - Dark-mode color correctness (issue #20)
+    // Plain text rendered inside NSTextView defaults to raw black when no
+    // `.foregroundColor` is set, which is invisible / near-invisible in dark
+    // mode. The renderer must set `NSColor.labelColor` so the text adapts
+    // to the current system appearance.
+
+    @Test func testPlainTextUsesAdaptiveLabelColor() {
+        let result = MarkdownRenderer.render("Hello world")
+        let range = (result.string as NSString).range(of: "Hello world")
+        let attrs = result.attributes(at: range.location, effectiveRange: nil)
+        let color = attrs[.foregroundColor] as? NSColor
+        #expect(color == NSColor.labelColor,
+                "Plain text must use NSColor.labelColor so it stays visible in dark mode (issue #20)")
+    }
+
+    @Test func testBoldTextUsesAdaptiveLabelColor() {
+        let result = MarkdownRenderer.render("This is **bold** text")
+        let range = (result.string as NSString).range(of: "bold")
+        let attrs = result.attributes(at: range.location, effectiveRange: nil)
+        let color = attrs[.foregroundColor] as? NSColor
+        #expect(color == NSColor.labelColor,
+                "Bold text must use NSColor.labelColor so it stays visible in dark mode (issue #20)")
+    }
+
+    @Test func testHeadingUsesAdaptiveLabelColor() {
+        let result = MarkdownRenderer.render("# A heading")
+        let range = (result.string as NSString).range(of: "A heading")
+        let attrs = result.attributes(at: range.location, effectiveRange: nil)
+        let color = attrs[.foregroundColor] as? NSColor
+        #expect(color == NSColor.labelColor,
+                "Heading text must use NSColor.labelColor so it stays visible in dark mode (issue #20)")
+    }
+
+    @Test func testCodeBlockUsesAdaptiveLabelColor() {
+        let result = MarkdownRenderer.render("""
+        ```
+        let x = 1
+        ```
+        """)
+        let range = (result.string as NSString).range(of: "let x = 1")
+        let attrs = result.attributes(at: range.location, effectiveRange: nil)
+        let color = attrs[.foregroundColor] as? NSColor
+        #expect(color == NSColor.labelColor,
+                "Fenced code block text must use NSColor.labelColor so it stays visible in dark mode (issue #20)")
+    }
+
+    @Test func testInlineCodeUsesAdaptiveLabelColor() {
+        let result = MarkdownRenderer.render("Use `let` for constants")
+        let range = (result.string as NSString).range(of: "let")
+        let attrs = result.attributes(at: range.location, effectiveRange: nil)
+        let color = attrs[.foregroundColor] as? NSColor
+        #expect(color == NSColor.labelColor,
+                "Inline code must use NSColor.labelColor so it stays visible in dark mode (issue #20)")
+    }
+
     // MARK: - Bold
 
     @Test func testBoldRendered() {

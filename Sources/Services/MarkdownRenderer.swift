@@ -53,6 +53,7 @@ private struct AttributedStringWalker: MarkupWalker {
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .backgroundColor: NSColor.secondarySystemFill,
+            .foregroundColor: NSColor.labelColor,
         ]
         output.append(NSAttributedString(string: code, attributes: attrs))
     }
@@ -190,7 +191,12 @@ private struct AttributedStringWalker: MarkupWalker {
     // MARK: - Helpers
 
     private func appendText(_ text: String) {
-        var attrs: [NSAttributedString.Key: Any] = [:]
+        // Default to the adaptive system label color so output stays visible
+        // in both light and dark mode (issue #20). Blockquote / link branches
+        // below override this when they need a different color.
+        var attrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.labelColor,
+        ]
 
         // Determine effective bold state (explicit bold OR table header)
         let effectiveBold = fontTraits.contains(.bold) || isTableHeader
