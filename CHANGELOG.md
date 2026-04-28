@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.8 — 2026-04-28
+
+Fix: response text was unreadable in dark mode (issues #20, #23).
+
+`MarkdownRenderer` was emitting attributed-string runs without `.foregroundColor`, so `NSTextView` fell back to a static text colour and rendered the response as black-on-dark. The fix sets `.foregroundColor: NSColor.labelColor` on every run — text, code blocks, headings, inline code, and the inter-paragraph newline runs. `labelColor` is a dynamic system colour that resolves per appearance, so the response now adapts in Light, Dark, and Auto.
+
+- 32 markdown-renderer tests, including a new `testEveryGlyphCarriesLabelColor` that walks every character of a multi-paragraph render and asserts each carries `labelColor` (catches missed paths that single-range tests skip).
+- No behaviour changes outside the renderer. Settings → Appearance → System / Light / Dark picker is unchanged.
+
 ## v1.0.7 — 2026-04-23
 
 Removed the voice-input feature.
