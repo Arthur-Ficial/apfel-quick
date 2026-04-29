@@ -339,30 +339,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Panel auto-resize observer
 
+    /// Observe the QuickViewModel reactively (Observation framework) and resize
+    /// the panel only when output/isStreaming/errorMessage actually change.
+    /// Replaces an earlier 80ms polling loop that kept the menu bar app at
+    /// 7-8% CPU even when idle (issue #24).
     private func startPanelSizeObserver(viewModel: QuickViewModel) {
-        // Simple polling loop — cheap and avoids @Sendable closure issues.
-        Task { @MainActor [weak self, weak viewModel] in
-            while let _ = self, let _ = viewModel {
-                self?.resizePanelForContent()
-                try? await Task.sleep(for: .milliseconds(80))
+        resizePanelForContent()
+        armPanelSizeObserver(viewModel: viewModel)
+    }
+
+    private func armPanelSizeObserver(viewModel: QuickViewModel) {
+        withObservationTracking { [weak viewModel] in
+            guard let viewModel else { return }
+            _ = viewModel.output
+            _ = viewModel.isStreaming
+            _ = viewModel.errorMessage
+        } onChange: { [weak self, weak viewModel] in
+            Task { @MainActor in
+                guard let self, let viewModel else { return }
+                self.resizePanelForContent()
+                self.armPanelSizeObserver(viewModel: viewModel)
             }
         }
     }
 
     private func resizePanelForContent() {
         guard let panel, let vm = viewModel else { return }
-        let inputHeight: CGFloat = 60
-        var total = inputHeight
-        if !vm.output.isEmpty || vm.isStreaming {
-            // Measure approximately: 20pt per line, estimate line count from characters
-            let maxBodyHeight: CGFloat = 380
-            let approxLines = max(1, vm.output.count / 60 + 1)
-            let bodyHeight = min(maxBodyHeight, CGFloat(approxLines) * 22 + 40)
-            total += bodyHeight
-        }
-        if vm.errorMessage != nil {
-            total += 40
-        }
+        let total = PanelSizing.panelHeight(
+            output: vm.output,
+            isStreaming: vm.isStreaming,
+            errorMessage: vm.errorMessage
+        )
         var frame = panel.frame
         if abs(frame.height - total) > 1 {
             let delta = total - frame.height
